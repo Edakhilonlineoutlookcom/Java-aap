@@ -61,7 +61,6 @@ public class HelloServlet extends HttpServlet {
                 e.printStackTrace();
             }
         }
-        
         // Insert name into SQLite if provided and not clearing
         else if (username != null && !username.trim().isEmpty()) {
             try {
@@ -89,19 +88,38 @@ public class HelloServlet extends HttpServlet {
             out.println("<h1>User Directory</h1>");
         }
         
-        // Fetch and display registered users with timestamps
-        out.println("<h3>Registered Users:</h3><ul>");
+        // Fetch registered users to check if any exist
         boolean hasUsers = false;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            try (Connection conn = DriverManager.getConnection(DB_URL);
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    hasUsers = true;
+                }
+            }
+        } catch (Exception e) {
+            // Ignore for count check
+        }
+
+        out.println("<h3>Registered Users:</h3>");
+        
+        // Render search input only if there are users
+        if (hasUsers) {
+            out.println("<input type='text' id='searchInput' class='search-box' onkeyup='filterUsers()' placeholder='Search names...'>");
+        }
+        
+        out.println("<ul id='userList'>");
         try {
             Class.forName("org.sqlite.JDBC");
             try (Connection conn = DriverManager.getConnection(DB_URL);
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT name, created_at FROM users")) {
                 while (rs.next()) {
-                    hasUsers = true;
                     String name = rs.getString("name");
                     String time = rs.getString("created_at");
-                    out.println("<li style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>");
+                    out.println("<li class='user-item' style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>");
                     out.println("<span><strong>" + name + "</strong></span>");
                     out.println("<span style='color: #888; font-size: 12px;'>" + (time != null ? time : "") + "</span>");
                     out.println("</li>");
@@ -126,6 +144,22 @@ public class HelloServlet extends HttpServlet {
             out.println("</form>");
         }
         out.println("</div>");
+
+        // JavaScript for instant filtering
+        out.println("<script>");
+        out.println("function filterUsers() {");
+        out.println("  let input = document.getElementById('searchInput').value.toLowerCase();");
+        out.println("  let items = document.getElementsByClassName('user-item');");
+        out.println("  for (let i = 0; i < items.length; i++) {");
+        out.println("    let text = items[i].textContent || items[i].innerText;");
+        out.println("    if (text.toLowerCase().indexOf(input) > -1) {");
+        out.println("      items[i].style.display = '';");
+        out.println("    } else {");
+        out.println("      items[i].style.display = 'none';");
+        out.println("    }");
+        out.println("  }");
+        out.println("}");
+        out.println("</script>");
         
         out.println("</div></body></html>");
     }

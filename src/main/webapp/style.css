@@ -1,18 +1,16 @@
-.btn-danger {
-    background-color: #d93025;
-    margin-top: 15px;
+.search-box {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s;
 }
 
-.btn-danger:hover {
-    background-color: #b31412;
-}
-
-.footer-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 25px;
-    border-top: 1px solid #f0f2f5;
-    padding-top: 15px;
+.search-box:focus {
+    border-color: #1a73e8;
 }
 
