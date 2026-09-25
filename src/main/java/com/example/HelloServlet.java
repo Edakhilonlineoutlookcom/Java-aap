@@ -40,7 +40,6 @@ public class HelloServlet extends HttpServlet {
         }
     }
 
-    // Helper method to escape HTML special characters and prevent XSS
     private String escapeHtml(String input) {
         if (input == null) {
             return "";
@@ -61,7 +60,6 @@ public class HelloServlet extends HttpServlet {
         String action = request.getParameter("action");
         String rawUsername = request.getParameter("username");
         
-        // Handle clear action
         if ("clear".equals(action)) {
             try {
                 Class.forName("org.sqlite.JDBC");
@@ -72,9 +70,7 @@ public class HelloServlet extends HttpServlet {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        // Insert name into SQLite if provided and not clearing
-        else if (rawUsername != null && !rawUsername.trim().isEmpty()) {
+        } else if (rawUsername != null && !rawUsername.trim().isEmpty()) {
             try {
                 Class.forName("org.sqlite.JDBC");
                 try (Connection conn = DriverManager.getConnection(DB_URL);
@@ -94,7 +90,6 @@ public class HelloServlet extends HttpServlet {
             out.println("<h1>Database Cleared!</h1>");
             out.println("<p style='color: #666; font-size: 14px;'>All user records have been removed.</p>");
         } else if (rawUsername != null && !rawUsername.trim().isEmpty()) {
-            // Safely escape the username before displaying it back to the user
             String safeUsername = escapeHtml(rawUsername.trim());
             out.println("<h1>Hello, " + safeUsername + "!</h1>");
             out.println("<p style='color: #666; font-size: 14px;'>Successfully saved to your SQLite database.</p>");
@@ -102,25 +97,28 @@ public class HelloServlet extends HttpServlet {
             out.println("<h1>User Directory</h1>");
         }
         
-        // Fetch registered users to check if any exist
-        boolean hasUsers = false;
+        // Fetch exact user count and check existence
+        int userCount = 0;
         try {
             Class.forName("org.sqlite.JDBC");
             try (Connection conn = DriverManager.getConnection(DB_URL);
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
-                if (rs.next() && rs.getInt(1) > 0) {
-                    hasUsers = true;
+                if (rs.next()) {
+                    userCount = rs.getInt(1);
                 }
             }
         } catch (Exception e) {
-            // Ignore for count check
+            // Ignore
         }
 
-        out.println("<h3>Registered Users:</h3>");
+        // Render user directory header with live count badge
+        out.println("<div style='display: flex; justify-content: space-between; align-items: center; margin-top: 15px;'>");
+        out.println("<h3 style='margin: 0; border: none;'>Registered Users</h3>");
+        out.println("<span style='background-color: #1a73e8; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;'>" + userCount + " Total</span>");
+        out.println("</div><hr style='border: 0; border-top: 2px solid #f0f2f5; margin: 10px 0 15px 0;'>");
         
-        // Render search input only if there are users
-        if (hasUsers) {
+        if (userCount > 0) {
             out.println("<input type='text' id='searchInput' class='search-box' onkeyup='filterUsers()' placeholder='Search names...'>");
         }
         
@@ -131,8 +129,6 @@ public class HelloServlet extends HttpServlet {
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT name, created_at FROM users")) {
                 while (rs.next()) {
-                    hasUsers = true;
-                    // Safely escape database entries to prevent stored XSS
                     String name = escapeHtml(rs.getString("name"));
                     String time = escapeHtml(rs.getString("created_at"));
                     
@@ -146,15 +142,14 @@ public class HelloServlet extends HttpServlet {
             out.println("<li>Error loading users: " + e.getMessage() + "</li>");
         }
         
-        if (!hasUsers) {
+        if (userCount == 0) {
             out.println("<li style='color: #888; font-style: italic;'>No users registered yet.</li>");
         }
         out.println("</ul>");
         
-        // Footer navigation and clear action button
         out.println("<div class='footer-actions'>");
         out.println("<a href='index.jsp'>&larr; Back to Home</a>");
-        if (hasUsers) {
+        if (userCount > 0) {
             out.println("<form action='hello' method='GET' style='margin:0;'>");
             out.println("<input type='hidden' name='action' value='clear'>");
             out.println("<button type='submit' class='btn-danger' style='margin-top:0; padding: 6px 12px; font-size: 14px;'>Clear All</button>");
@@ -162,7 +157,6 @@ public class HelloServlet extends HttpServlet {
         }
         out.println("</div>");
 
-        // JavaScript for instant filtering
         out.println("<script>");
         out.println("function filterUsers() {");
         out.println("  let input = document.getElementById('searchInput').value.toLowerCase();");
