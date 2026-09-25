@@ -24,12 +24,15 @@ public class HelloServletTest {
         
         String result = escapeHtml(maliciousInput);
         
-        assertEquals(expected, "The XSS payload was not safely escaped!", result);
+        // Correct order: assertEquals(expected, actual, message)
+        assertEquals(expected, result, "The XSS payload was not safely escaped!");
     }
 
     @Test
     public void testNullInput() {
         String result = escapeHtml(null);
-        assertEquals("", "Null input should return an empty string", result);
+        // Correct order: assertEquals(expected, actual, message)
+        assertEquals("", result, "Null input should return an empty string");
     }
 }
+
