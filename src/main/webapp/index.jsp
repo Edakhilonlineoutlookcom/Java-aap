@@ -1,18 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<html>
-<head>
-    <title>Java App Home</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <h2>Welcome to My Java App!</h2>
-        <form action="hello" method="GET">
-            <label for="username">Enter your name:</label>
-            <input type="text" id="username" name="username" placeholder="Type your name here..." required>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-</body>
-</html>
+<div style="margin-top: 20px; text-align: center;">
+    <a href="about" style="color: #1a73e8; text-decoration: none; font-size: 14px;">Learn more About this App &rarr;</a>
+</div>
 
