@@ -40,6 +40,18 @@ public class HelloServlet extends HttpServlet {
         }
     }
 
+    // Helper method to escape HTML special characters and prevent XSS
+    private String escapeHtml(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#x27;");
+    }
+
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
@@ -47,7 +59,7 @@ public class HelloServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         
         String action = request.getParameter("action");
-        String username = request.getParameter("username");
+        String rawUsername = request.getParameter("username");
         
         // Handle clear action
         if ("clear".equals(action)) {
@@ -62,12 +74,12 @@ public class HelloServlet extends HttpServlet {
             }
         }
         // Insert name into SQLite if provided and not clearing
-        else if (username != null && !username.trim().isEmpty()) {
+        else if (rawUsername != null && !rawUsername.trim().isEmpty()) {
             try {
                 Class.forName("org.sqlite.JDBC");
                 try (Connection conn = DriverManager.getConnection(DB_URL);
                      PreparedStatement pstmt = conn.prepareStatement("INSERT INTO users(name) VALUES(?)")) {
-                    pstmt.setString(1, username.trim());
+                    pstmt.setString(1, rawUsername.trim());
                     pstmt.executeUpdate();
                 }
             } catch (Exception e) {
@@ -81,8 +93,10 @@ public class HelloServlet extends HttpServlet {
         if ("clear".equals(action)) {
             out.println("<h1>Database Cleared!</h1>");
             out.println("<p style='color: #666; font-size: 14px;'>All user records have been removed.</p>");
-        } else if (username != null && !username.trim().isEmpty()) {
-            out.println("<h1>Hello, " + username + "!</h1>");
+        } else if (rawUsername != null && !rawUsername.trim().isEmpty()) {
+            // Safely escape the username before displaying it back to the user
+            String safeUsername = escapeHtml(rawUsername.trim());
+            out.println("<h1>Hello, " + safeUsername + "!</h1>");
             out.println("<p style='color: #666; font-size: 14px;'>Successfully saved to your SQLite database.</p>");
         } else {
             out.println("<h1>User Directory</h1>");
@@ -117,11 +131,14 @@ public class HelloServlet extends HttpServlet {
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT name, created_at FROM users")) {
                 while (rs.next()) {
-                    String name = rs.getString("name");
-                    String time = rs.getString("created_at");
+                    hasUsers = true;
+                    // Safely escape database entries to prevent stored XSS
+                    String name = escapeHtml(rs.getString("name"));
+                    String time = escapeHtml(rs.getString("created_at"));
+                    
                     out.println("<li class='user-item' style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>");
                     out.println("<span><strong>" + name + "</strong></span>");
-                    out.println("<span style='color: #888; font-size: 12px;'>" + (time != null ? time : "") + "</span>");
+                    out.println("<span style='color: #888; font-size: 12px;'>" + time + "</span>");
                     out.println("</li>");
                 }
             }
